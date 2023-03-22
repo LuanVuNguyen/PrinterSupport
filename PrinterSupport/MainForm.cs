@@ -1,15 +1,19 @@
-﻿using System;
+﻿using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System.IO;
+using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Windows.Forms;
-
 namespace PrinterSupport
 {
     public partial class MainForm : Form
     {
-        private PrintDocument printDocument1;
         private NotifyIcon notifyIcon;
         public MainForm()
         {
@@ -58,15 +62,8 @@ namespace PrinterSupport
                 cb_printer_hoadon.SelectedIndex = 0;
             }
             // Khởi tạo PrintDocument để in bản in thử
-            printDocument1 = new PrintDocument();
-            printDocument1.PrintPage += new PrintPageEventHandler(printDocument1_PrintPage);
         }
-        private void printDocument1_PrintPage(object sender, PrintPageEventArgs e)
-        {
-            // Vẽ một dòng chữ "Hello, world!" bằng font Arial với kích cỡ 16
-            var font = new Font("Arial", 16);
-            e.Graphics.DrawString("Hello, world!", font, Brushes.Black, new PointF(100, 100));
-        }
+
         private bool IsPrinterConnected(string printerName)
         {
             try
@@ -80,18 +77,46 @@ namespace PrinterSupport
                 return false;
             }
         }
+        public void PrintPdf(string filename, string printerName)
+        {
+            ProcessStartInfo info = new ProcessStartInfo();
+            info.Verb = "printto";
+            info.FileName = filename;
+            info.Arguments = "\"" + printerName + "\"";
+            info.CreateNoWindow = true;
+            info.WindowStyle = ProcessWindowStyle.Hidden;
+            Process p = new Process();
+            p.StartInfo = info;
+            p.Start();
+            p.WaitForExit();
+        }
 
         private void btn_SaveSetup_Click(object sender, EventArgs e)
         {
             string selectedPrinter = cb_printer_hoadon.SelectedItem.ToString();
-            Console.WriteLine(selectedPrinter);
-            printDocument1.PrinterSettings.PrinterName = selectedPrinter;
-            // In bản in thử
-            //printDocument1.Print();
-            //Thread backgroundThread = new Thread(new ThreadStart(RunBackground));
-            //backgroundThread.Start();
+            string dicrectionPath = @"D:\VuLuan\test_print";
             this.Hide();
+            PrintNewPdfFiles(dicrectionPath, selectedPrinter);           
         }
+        public void PrintNewPdfFiles(string directoryPath, string printerName)
+        {
+            while (true)
+            {
+                // Get a list of all PDF files in the directory
+                string[] pdfFiles = Directory.GetFiles(directoryPath, "*.pdf");
 
+                // Print each new PDF file that hasn't been printed before
+                foreach (string pdfFile in pdfFiles)
+                {
+                    if (!File.Exists(pdfFile + ".printed"))
+                    {
+                        PrintPdf(pdfFile, printerName);
+                        File.Create(pdfFile + ".printed").Dispose(); // Mark the file as printed
+                    }
+                }
+                // Wait for 1 second before checking again
+                Thread.Sleep(1000);
+            }
+        }
     }
 }
