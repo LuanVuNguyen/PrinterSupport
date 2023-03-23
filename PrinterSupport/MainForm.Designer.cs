@@ -29,6 +29,7 @@ namespace PrinterSupport
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.panel1 = new System.Windows.Forms.Panel();
             this.btn_SaveSetup = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
@@ -38,8 +39,8 @@ namespace PrinterSupport
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.cb_printer_hoadon = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.cb_printer_hoadon = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
             this.txt_urlSever = new System.Windows.Forms.TextBox();
@@ -151,14 +152,6 @@ namespace PrinterSupport
             this.label2.TabIndex = 0;
             this.label2.Text = "Hóa Đơn";
             // 
-            // cb_printer_hoadon
-            // 
-            this.cb_printer_hoadon.FormattingEnabled = true;
-            this.cb_printer_hoadon.Location = new System.Drawing.Point(134, 4);
-            this.cb_printer_hoadon.Name = "cb_printer_hoadon";
-            this.cb_printer_hoadon.Size = new System.Drawing.Size(292, 21);
-            this.cb_printer_hoadon.TabIndex = 4;
-            // 
             // label3
             // 
             this.label3.AutoSize = true;
@@ -169,6 +162,14 @@ namespace PrinterSupport
             this.label3.TabIndex = 1;
             this.label3.Text = "Phiếu Ưu Đãi";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // cb_printer_hoadon
+            // 
+            this.cb_printer_hoadon.FormattingEnabled = true;
+            this.cb_printer_hoadon.Location = new System.Drawing.Point(134, 4);
+            this.cb_printer_hoadon.Name = "cb_printer_hoadon";
+            this.cb_printer_hoadon.Size = new System.Drawing.Size(292, 21);
+            this.cb_printer_hoadon.TabIndex = 4;
             // 
             // label1
             // 
@@ -192,19 +193,19 @@ namespace PrinterSupport
             // txt_urlSever
             // 
             this.txt_urlSever.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.txt_urlSever.Location = new System.Drawing.Point(85, 5);
+            this.txt_urlSever.Location = new System.Drawing.Point(108, 5);
             this.txt_urlSever.Name = "txt_urlSever";
-            this.txt_urlSever.Size = new System.Drawing.Size(324, 20);
+            this.txt_urlSever.Size = new System.Drawing.Size(301, 20);
             this.txt_urlSever.TabIndex = 1;
             // 
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 9);
+            this.label6.Location = new System.Drawing.Point(2, 9);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(79, 13);
+            this.label6.Size = new System.Drawing.Size(108, 13);
             this.label6.TabIndex = 0;
-            this.label6.Text = "URL SERVER:";
+            this.label6.Text = "DICRECTION PATH:";
             // 
             // label7
             // 
@@ -226,6 +227,7 @@ namespace PrinterSupport
             this.Controls.Add(this.label1);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
             this.Text = "PRINTER SUPPORT";
             this.Load += new System.EventHandler(this.MainForm_Load);

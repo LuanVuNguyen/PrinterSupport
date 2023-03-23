@@ -19,7 +19,7 @@ namespace PrinterSupport
         {
             InitializeComponent();
             this.notifyIcon = new NotifyIcon();
-            this.notifyIcon.Icon = new Icon(@"PrinterSupport\connected.ico");
+            this.notifyIcon.Icon = new Icon("pinter_icon.ico");
             this.notifyIcon.Text = "Printer Support";
             this.notifyIcon.Click += new EventHandler(NotifyIcon_Click);
             this.notifyIcon.Visible = true;
@@ -33,6 +33,18 @@ namespace PrinterSupport
         {
             GetLocalPrinters();
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            // Get the default document folder path
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            // Combine the document path with the new folder name
+            string newFolderPath = Path.Combine(documentsPath, "HoaDon");
+
+            // Check if the folder already exists
+            if (!Directory.Exists(newFolderPath))
+            {
+                // Create the new folder
+                Directory.CreateDirectory(newFolderPath);
+            }
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -94,7 +106,8 @@ namespace PrinterSupport
         private void btn_SaveSetup_Click(object sender, EventArgs e)
         {
             string selectedPrinter = cb_printer_hoadon.SelectedItem.ToString();
-            string dicrectionPath = @"D:\VuLuan\test_print";
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            string dicrectionPath = Path.Combine(documentsPath, "HoaDon");
             this.Hide();
             PrintNewPdfFiles(dicrectionPath, selectedPrinter);           
         }
