@@ -1,135 +1,180 @@
-﻿using iTextSharp.text;
-using iTextSharp.text.pdf;
-using System.IO;
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Fleck;
+using Newtonsoft.Json.Linq;
+
 namespace PrinterSupport
 {
     public partial class MainForm : Form
     {
         private NotifyIcon notifyIcon;
+        private ContextMenuStrip trayMenu;
+        private string selectedPrinter = "";
+        private string token = null;
+        private string idhoadon = null;
+        private string type = null;
+
         public MainForm()
         {
             InitializeComponent();
-            this.notifyIcon = new NotifyIcon();
-            this.notifyIcon.Icon = new Icon("pinter_icon.ico");
-            this.notifyIcon.Text = "Printer Support";
-            this.notifyIcon.Click += new EventHandler(NotifyIcon_Click);
-            this.notifyIcon.Visible = true;
+            InitializeNotifyIcon();
         }
-        private void NotifyIcon_Click(object sender, EventArgs e)
+        private void InitializeNotifyIcon()
         {
-            this.Show();
-            this.WindowState = FormWindowState.Normal;
+            notifyIcon = new NotifyIcon();
+            notifyIcon.Icon = new Icon("pinter_icon.ico");
+            notifyIcon.Text = "Printer Support";
+            notifyIcon.Visible = true;
+            notifyIcon.MouseClick += NotifyIcon_MouseClick;
+            trayMenu = new ContextMenuStrip();
+            trayMenu.Items.Add("Open", null, TrayMenu_Open);
+            trayMenu.Items.Add("Exit", null, TrayMenu_Exit);
+            notifyIcon.ContextMenuStrip = trayMenu;
+        }
+        private void NotifyIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                // handle left click
+                this.Show();
+            }
         }
         private void MainForm_Load(object sender, EventArgs e)
         {
+            AppConfig.parseConfig();
+            Init();
             GetLocalPrinters();
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            // Get the default document folder path
-            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-            // Combine the document path with the new folder name
-            string newFolderPath = Path.Combine(documentsPath, "HoaDon");
-
-            // Check if the folder already exists
-            if (!Directory.Exists(newFolderPath))
-            {
-                // Create the new folder
-                Directory.CreateDirectory(newFolderPath);
-            }
+            Task.Run(() =>CreatSocket());
+            this.FormClosing += MainForm_FormClosing;
         }
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (e.CloseReason == CloseReason.UserClosing)
             {
-                e.Cancel = true; // Hủy đóng Form khi bấm nút Close
-                this.Hide(); // Ẩn Form đi
+                e.Cancel = true;
+                this.Hide();
             }
         }
+        private void TrayMenu_Open(object sender, EventArgs e)
+        {
+            this.Show();
+        }
+        private void TrayMenu_Exit(object sender, EventArgs e)
+        {
+            notifyIcon.Visible = false;
+            Application.Exit();
+        }
+
         private void GetLocalPrinters()
         {
             cb_printer_hoadon.Items.Clear();
-            // Lấy danh sách các máy in đã được cài đặt trên máy tính
+
+            // Get the list of installed printers on the computer
             string[] installedPrinters = PrinterSettings.InstalledPrinters.Cast<string>().ToArray();
+
             foreach (string printer in installedPrinters)
             {
-                if (IsPrinterConnected(printer))
-                {
-                    cb_printer_hoadon.Items.Add(printer);
-                    cb_printer_phieuuudai.Items.Add(printer);
-                    cb_printer2.Items.Add(printer);
-                    cb_printer3.Items.Add(printer);
-                }
+                cb_printer_hoadon.Items.Add(printer);
+                cb_printer_phieuuudai.Items.Add(printer);
+                cb_printer2.Items.Add(printer);
+                cb_printer3.Items.Add(printer);
             }
-            if (cb_printer_hoadon.Items.Count > 0)
+
+            // Select the default printers if they exist
+            if (cb_printer_hoadon.Items.Count > 0 && cb_printer_phieuuudai.Items.Count > 0 && cb_printer2.Items.Count > 0 && cb_printer3.Items.Count > 0)
             {
-                cb_printer_hoadon.SelectedIndex = 0;
+                cb_printer_hoadon.SelectedIndex = cb_printer_hoadon.FindStringExact(ConfigVaribales.printer_hoadon);
+                cb_printer_phieuuudai.SelectedIndex = cb_printer_phieuuudai.FindStringExact(ConfigVaribales.printer_voucher);
+                cb_printer2.SelectedIndex = cb_printer2.FindStringExact(ConfigVaribales.printer2);
+                cb_printer3.SelectedIndex = cb_printer3.FindStringExact(ConfigVaribales.printer3);
             }
-            // Khởi tạo PrintDocument để in bản in thử
         }
 
-        private bool IsPrinterConnected(string printerName)
+        private void Btn_SaveSetup_Click(object sender, EventArgs e)
         {
-            try
-            {
-                PrinterSettings ps = new PrinterSettings();
-                ps.PrinterName = printerName;
-                return ps.IsValid;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-        public void PrintPdf(string filename, string printerName)
-        {
-            ProcessStartInfo info = new ProcessStartInfo();
-            info.Verb = "printto";
-            info.FileName = filename;
-            info.Arguments = "\"" + printerName + "\"";
-            info.CreateNoWindow = true;
-            info.WindowStyle = ProcessWindowStyle.Hidden;
-            Process p = new Process();
-            p.StartInfo = info;
-            p.Start();
-            p.WaitForExit();
-        }
-
-        private void btn_SaveSetup_Click(object sender, EventArgs e)
-        {
-            string selectedPrinter = cb_printer_hoadon.SelectedItem.ToString();
-            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            string dicrectionPath = Path.Combine(documentsPath, "HoaDon");
             this.Hide();
-            PrintNewPdfFiles(dicrectionPath, selectedPrinter);           
         }
-        public void PrintNewPdfFiles(string directoryPath, string printerName)
+
+        private void CreatSocket()
         {
+            var server = new WebSocketServer(ConfigVaribales.url_socket);
+            server.Start(socket =>
+            {
+                socket.OnOpen = () =>
+                {
+                    Console.WriteLine("WebSocket opened.");
+                };
+                socket.OnClose = () =>
+                {
+                    Console.WriteLine("WebSocket closed.");
+
+                };
+                socket.OnMessage = message =>
+                {
+                    JObject res = JObject.Parse(message);
+                    idhoadon = (string)res["hoaDonID"];
+                    token = (string)res["token"];
+                    type = (string)res["type"];
+                    Console.WriteLine("ID: " + idhoadon);
+                    Console.WriteLine("Token: " + token);
+                    Console.WriteLine("Type: " + type);
+                };
+            });
             while (true)
             {
-                // Get a list of all PDF files in the directory
-                string[] pdfFiles = Directory.GetFiles(directoryPath, "*.pdf");
-
-                // Print each new PDF file that hasn't been printed before
-                foreach (string pdfFile in pdfFiles)
+                // Wait for a message to be received
+                while (idhoadon == null)
                 {
-                    if (!File.Exists(pdfFile + ".printed"))
-                    {
-                        PrintPdf(pdfFile, printerName);
-                        File.Create(pdfFile + ".printed").Dispose(); // Mark the file as printed
-                    }
+                    Thread.Sleep(1000); // Sleep for 1 second before checking for new message
                 }
-                // Wait for 1 second before checking again
-                Thread.Sleep(1000);
+                // Do something with the new message
+                Print print = new Print();
+                switch (type)
+                {
+                    case string s when s == ConfigVaribales.type_print_HoaDon:
+                        cb_printer_hoadon.Invoke((MethodInvoker)delegate
+                        {
+                            selectedPrinter = cb_printer_hoadon.Text;
+                        });
+                        break;
+                    case string s when s==ConfigVaribales.type_print_Voucher:
+                        cb_printer_phieuuudai.Invoke((MethodInvoker)delegate
+                        {
+                            selectedPrinter = cb_printer_phieuuudai.Text;
+                        });
+                        break;
+                    case string s when s == ConfigVaribales.type_print_HoaDonTam:
+                        cb_printer2.Invoke((MethodInvoker)delegate
+                        {
+                            selectedPrinter = cb_printer2.Text;
+                        });
+                        break;
+                    default:
+                        cb_printer3.Invoke((MethodInvoker)delegate
+                        {
+                            selectedPrinter = cb_printer3.Text;
+                        });
+                        break;
+                }
+                print.Main(idhoadon, selectedPrinter, token);
+                // Reset the idhoadon variable
+                idhoadon = null;
             }
         }
+
+        private void Init()
+        {
+            type_in1.Text = ConfigVaribales.type_print_HoaDon;
+            type_in2.Text = ConfigVaribales.type_print_Voucher;
+            type_in3.Text = ConfigVaribales.type_print_HoaDonTam;
+            type_in4.Text = ConfigVaribales.type_print_billnuoc;
+        }
+
     }
 }
