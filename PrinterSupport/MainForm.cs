@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Fleck;
 using Newtonsoft.Json.Linq;
 
 namespace PrinterSupport
@@ -18,6 +21,8 @@ namespace PrinterSupport
         private string token = null;
         private string idhoadon = null;
         private string type = null;
+        private HttpListener _listener;
+        private bool _isListening = false;
 
         public MainForm()
         {
@@ -27,7 +32,7 @@ namespace PrinterSupport
         private void InitializeNotifyIcon()
         {
             notifyIcon = new NotifyIcon();
-            notifyIcon.Icon = new Icon("pinter_icon.ico");
+            notifyIcon.Icon = new Icon(@"Config/pinter_icon.ico");
             notifyIcon.Text = "Printer Support";
             notifyIcon.Visible = true;
             notifyIcon.MouseClick += NotifyIcon_MouseClick;
@@ -49,8 +54,9 @@ namespace PrinterSupport
             AppConfig.parseConfig();
             Init();
             GetLocalPrinters();
+            Log.Logger();
             Task.Run(() =>CreatSocket());
-            this.FormClosing += MainForm_FormClosing;
+            this.FormClosing += MainForm_FormClosing;         
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -58,7 +64,7 @@ namespace PrinterSupport
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 e.Cancel = true;
-                this.Hide();
+                this.Hide();               
             }
         }
         private void TrayMenu_Open(object sender, EventArgs e)
@@ -82,16 +88,16 @@ namespace PrinterSupport
             {
                 cb_printer_hoadon.Items.Add(printer);
                 cb_printer_phieuuudai.Items.Add(printer);
-                cb_printer2.Items.Add(printer);
+                cb_printer_HoaDonTam.Items.Add(printer);
                 cb_printer3.Items.Add(printer);
             }
 
             // Select the default printers if they exist
-            if (cb_printer_hoadon.Items.Count > 0 && cb_printer_phieuuudai.Items.Count > 0 && cb_printer2.Items.Count > 0 && cb_printer3.Items.Count > 0)
+            if (cb_printer_hoadon.Items.Count > 0 && cb_printer_phieuuudai.Items.Count > 0 && cb_printer_HoaDonTam.Items.Count > 0 && cb_printer3.Items.Count > 0)
             {
                 cb_printer_hoadon.SelectedIndex = cb_printer_hoadon.FindStringExact(ConfigVaribales.printer_hoadon);
                 cb_printer_phieuuudai.SelectedIndex = cb_printer_phieuuudai.FindStringExact(ConfigVaribales.printer_voucher);
-                cb_printer2.SelectedIndex = cb_printer2.FindStringExact(ConfigVaribales.printer2);
+                cb_printer_HoaDonTam.SelectedIndex = cb_printer_HoaDonTam.FindStringExact(ConfigVaribales.printer_hoadontam);
                 cb_printer3.SelectedIndex = cb_printer3.FindStringExact(ConfigVaribales.printer3);
             }
         }
@@ -101,34 +107,56 @@ namespace PrinterSupport
             this.Hide();
         }
 
-        private void CreatSocket()
+        private async void CreatSocket()
         {
-            var server = new WebSocketServer(ConfigVaribales.url_socket);
-            server.Start(socket =>
+            if (!_isListening)
             {
-                socket.OnOpen = () =>
+                _listener = new HttpListener();
+                _listener.Prefixes.Add(ConfigVaribales.url_socket);
+                //_listener.Prefixes.Add("http://" + host + ":" + port + "/");
+                _listener.Start();
+                //text_received.AppendText("Listening for incoming WebSocket connections...\r\n");
+                Console.WriteLine("Listening for incoming WebSocket connections...\r\n");
+                Log.Logs("Listening for incoming WebSocket connections...\r\n");
+                _isListening = true;
+                //lbl_connectionStatus.Text = "connected";
+                while (_isListening)
                 {
-                    Console.WriteLine("WebSocket opened.");
-                };
-                socket.OnClose = () =>
+                    var context = await _listener.GetContextAsync();
+                    if (context.Request.IsWebSocketRequest)
+                    {
+                        var webSocketContext = await context.AcceptWebSocketAsync(null);
+                        //text_received.AppendText("WebSocket connection established.\r\n");
+                        await Receive(webSocketContext.WebSocket);
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 400;
+                        context.Response.Close();
+                    }
+                }
+            }
+        }
+        private async Task Receive(WebSocket webSocket)
+        {
+            var buffer = new byte[1024];
+            while (webSocket.State == WebSocketState.Open)
+            {
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    Console.WriteLine("WebSocket closed.");
-
-                };
-                socket.OnMessage = message =>
-                {
-                    JObject res = JObject.Parse(message);
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    Console.WriteLine(message);
+                    Log.Logs(message);
+                    //text_received.AppendText($"Received message: {message}\r\n");
+                    JObject res = JObject.Parse(message);                   
                     idhoadon = (string)res["hoaDonID"];
                     token = (string)res["token"];
                     type = (string)res["type"];
                     Console.WriteLine("ID: " + idhoadon);
                     Console.WriteLine("Token: " + token);
                     Console.WriteLine("Type: " + type);
-                };
-            });
-            while (true)
-            {
-                // Wait for a message to be received
+                }
                 while (idhoadon == null)
                 {
                     Thread.Sleep(1000); // Sleep for 1 second before checking for new message
@@ -143,16 +171,16 @@ namespace PrinterSupport
                             selectedPrinter = cb_printer_hoadon.Text;
                         });
                         break;
-                    case string s when s==ConfigVaribales.type_print_Voucher:
+                    case string s when s == ConfigVaribales.type_print_Voucher:
                         cb_printer_phieuuudai.Invoke((MethodInvoker)delegate
                         {
                             selectedPrinter = cb_printer_phieuuudai.Text;
                         });
                         break;
                     case string s when s == ConfigVaribales.type_print_HoaDonTam:
-                        cb_printer2.Invoke((MethodInvoker)delegate
+                        cb_printer_HoaDonTam.Invoke((MethodInvoker)delegate
                         {
-                            selectedPrinter = cb_printer2.Text;
+                            selectedPrinter = cb_printer_HoaDonTam.Text;
                         });
                         break;
                     default:
@@ -163,11 +191,11 @@ namespace PrinterSupport
                         break;
                 }
                 print.Main(idhoadon, selectedPrinter, token);
-                // Reset the idhoadon variable
+                //Reset the idhoadon variable
                 idhoadon = null;
             }
-        }
 
+        }
         private void Init()
         {
             type_in1.Text = ConfigVaribales.type_print_HoaDon;

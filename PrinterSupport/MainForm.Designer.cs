@@ -34,7 +34,7 @@ namespace PrinterSupport
             this.btn_SaveSetup = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.cb_printer3 = new System.Windows.Forms.ComboBox();
-            this.cb_printer2 = new System.Windows.Forms.ComboBox();
+            this.cb_printer_HoaDonTam = new System.Windows.Forms.ComboBox();
             this.cb_printer_phieuuudai = new System.Windows.Forms.ComboBox();
             this.type_in3 = new System.Windows.Forms.Label();
             this.type_in4 = new System.Windows.Forms.Label();
@@ -79,7 +79,7 @@ namespace PrinterSupport
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 129F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.Controls.Add(this.cb_printer3, 1, 3);
-            this.tableLayoutPanel1.Controls.Add(this.cb_printer2, 1, 2);
+            this.tableLayoutPanel1.Controls.Add(this.cb_printer_HoaDonTam, 1, 2);
             this.tableLayoutPanel1.Controls.Add(this.cb_printer_phieuuudai, 1, 1);
             this.tableLayoutPanel1.Controls.Add(this.type_in3, 0, 2);
             this.tableLayoutPanel1.Controls.Add(this.type_in4, 0, 3);
@@ -105,14 +105,14 @@ namespace PrinterSupport
             this.cb_printer3.Size = new System.Drawing.Size(292, 21);
             this.cb_printer3.TabIndex = 7;
             // 
-            // cb_printer2
+            // cb_printer_HoaDonTam
             // 
-            this.cb_printer2.FormattingEnabled = true;
-            this.cb_printer2.Location = new System.Drawing.Point(134, 95);
-            this.cb_printer2.Margin = new System.Windows.Forms.Padding(3, 10, 10, 10);
-            this.cb_printer2.Name = "cb_printer2";
-            this.cb_printer2.Size = new System.Drawing.Size(292, 21);
-            this.cb_printer2.TabIndex = 6;
+            this.cb_printer_HoaDonTam.FormattingEnabled = true;
+            this.cb_printer_HoaDonTam.Location = new System.Drawing.Point(134, 95);
+            this.cb_printer_HoaDonTam.Margin = new System.Windows.Forms.Padding(3, 10, 10, 10);
+            this.cb_printer_HoaDonTam.Name = "cb_printer_HoaDonTam";
+            this.cb_printer_HoaDonTam.Size = new System.Drawing.Size(292, 21);
+            this.cb_printer_HoaDonTam.TabIndex = 6;
             // 
             // cb_printer_phieuuudai
             // 
@@ -206,6 +206,7 @@ namespace PrinterSupport
             this.Controls.Add(this.Label1);
             this.Controls.Add(this.panel1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "PRINTER SUPPORT";
@@ -226,7 +227,7 @@ namespace PrinterSupport
         private System.Windows.Forms.Button btn_SaveSetup;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.ComboBox cb_printer3;
-        private System.Windows.Forms.ComboBox cb_printer2;
+        private System.Windows.Forms.ComboBox cb_printer_HoaDonTam;
         private System.Windows.Forms.ComboBox cb_printer_phieuuudai;
         private System.Windows.Forms.Label type_in2;
         private System.Windows.Forms.Label type_in3;
